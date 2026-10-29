@@ -24,6 +24,7 @@ jobs:
           - { os: windows-latest, node: 24, dsh: 0.2.1-rc.2 }
           - { os: ubuntu-latest, node: 22, dsh: 0.2.1-rc.2 }
           - { os: ubuntu-latest, node: 24, dsh: 0.2.0-rc.2 }
+          - { os: ubuntu-latest, node: 24, dsh: 0.2.1 }
     defaults:
       run:
         shell: bash
@@ -33,6 +34,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: ds-bot/package-lock.json
       - run: npm ci --no-fund --no-audit
       - name: Install DSH ${{ matrix.dsh }}
         run: npm run harness -- --no-save "@deepseek-ai/dsh@${{ matrix.dsh }}"
@@ -66,6 +69,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
       # The test composes the profile and starts no window, so it needs no Electron binary.
       - run: npm ci --no-fund --no-audit
         env:
@@ -87,6 +92,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
       - run: npm ci --no-fund --no-audit
       - run: npm run dist
       - name: Check the packaged app
@@ -197,6 +204,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
       - run: npm ci --no-fund --no-audit
       - run: npm run dist
         env:
@@ -237,6 +246,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
       - run: npm ci --no-fund --no-audit
       - run: npm run dist
       - name: Check the packages
@@ -309,8 +320,9 @@ jobs:
       - run: docker compose -f docker/compose.yml config --quiet
       - run: docker build -f docker/Dockerfile -t ds-bot:test .
       - run: node docker/test.mjs ds-bot:test
+      # Publish on push; the image tag uses ${{ github.repository }} so forks publish to their own GHCR.
       - name: Publish the tested image
-        if: github.event_name == 'push' && github.repository == 'Fei2411/DeepSeek-Bot'
+        if: github.event_name == 'push'
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_ACTOR: ${{ github.actor }}
